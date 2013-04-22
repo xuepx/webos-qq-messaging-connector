@@ -1,9 +1,0 @@
-{
-	"id": "cn.xuepx.qq",
-	"version": "1.0.0",
-	"vendor": "xuepx",
-	"type": "web",
-	"main": "index.html",
-	"title": "QQ",
-    "visible": false
-}

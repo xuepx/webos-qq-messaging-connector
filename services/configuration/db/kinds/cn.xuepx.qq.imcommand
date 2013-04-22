@@ -1,0 +1,6 @@
+{
+    "id": "cn.xuepx.qq.imcommand:1",
+    "owner": "cn.xuepx.qq.service",
+    "sync": true,
+    "extends": [ "com.palm.imcommand:1" ]
+}

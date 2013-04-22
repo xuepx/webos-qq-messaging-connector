@@ -1,0 +1,51 @@
+{
+    "templateId":"cn.xuepx.qq.account",
+    "loc_name":"QQ",
+    "loc_usernameLabel":"QQ号",
+    "loc_passwordLabel":"密码",
+    "icon":{
+        "loc_32x32":"images/qq32.png",
+        "loc_48x48":"images/qq48.png",
+        "splitter":"images/qq32.png"
+    },
+    "hidden":false,
+    "invisible":false,
+    "validator":"palm://cn.xuepx.qq.service/checkCredentials",
+    "readPermissions":[ "cn.xuepx.qq", "com.palm.app.messaging", "com.palm.app.phone" ],
+    "writePermissions":[ "cn.xuepx.qq", "com.palm.app.messaging", "com.palm.app.phone" ],
+    "capabilityProviders":[
+        {
+            "id":"cn.xuepx.qq.account.im",
+            "alwaysOn":false,
+            "sync":"palm://cn.xuepx.qq.service/sync",
+            "loc_name":"QQ",
+            "loc_shortName":"QQ",
+            "capability":"MESSAGING",
+            "capabilitySubtype":"IM",
+            "serviceName":"type_qq",
+            "supportsInvisibleStatus":false,
+            "implementation":"palm://cn.xuepx.qq.service/",
+            "SendIM":"palm://cn.xuepx.qq.service/sendIM",
+            "onSendIM":"palm://cn.xuepx.qq.service/sendIM",
+            "onCreate":"palm://cn.xuepx.qq.service/onCreate",
+            "onEnabled":"palm://cn.xuepx.qq.service/onEnabled",
+            "onDelete":"palm://cn.xuepx.qq.service/onDelete",
+            "onCredentialsChanged":"palm://cn.xuepx.qq.service/onCredentialsChanged",
+            "onCapabilitiesChanged":"palm://cn.xuepx.qq.service/onCapabilitiesChanged",
+            "loginStateChanged":"palm://cn.xuepx.qq.service/loginStateChanged",
+            "sendCommand":"palm://cn.xuepx.qq.service/sendCommand",
+            "chatWithNonBuddies":true,
+            "readOnlyData":false,
+            "icon":{
+                "loc_32x32":"images/qq32.png",
+                "loc_48x48":"images/qq48.png",
+                "splitter":"images/qq32.png"
+            },
+            "dbkinds":{
+                "immessage":"cn.xuepx.qq.immessage:1",
+                "imloginstate":"cn.xuepx.qq.imloginstate:1",
+                "imcommand":"cn.xuepx.qq.imcommand:1"
+            }
+        }
+    ]
+}

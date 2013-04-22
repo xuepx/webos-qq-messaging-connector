@@ -1,0 +1,81 @@
+[{
+	type: "db.kind",
+	object: "cn.xuepx.qq.imcommand:1",
+	caller: "cn.xuepx.*",
+	operations: {
+		read: "allow",
+		create: "allow",
+		delete: "allow",
+		update: "allow"
+	}
+}, {
+	type: "db.kind",
+	object: "cn.xuepx.qq.imcommand:1",
+	caller: "com.palm.*",
+	operations: {
+		read: "allow",
+		create: "allow",
+		delete: "allow",
+		update: "allow"
+	}
+}, {
+	type: "db.kind",
+	object: "cn.xuepx.qq.imcantact:1",
+	caller: "cn.xuepx.*",
+	operations: {
+		read: "allow",
+		create: "allow",
+		delete: "allow",
+		update: "allow"
+	}
+}, {
+	type: "db.kind",
+	object: "cn.xuepx.qq.imcantact:1",
+	caller: "com.palm.*",
+	operations: {
+		read: "allow",
+		create: "allow",
+		delete: "allow",
+		update: "allow"
+	}
+}, {
+	type: "db.kind",
+	object: "cn.xuepx.qq.imloginstate:1",
+	caller: "cn.xuepx.*",
+	operations: {
+		read: "allow",
+		create: "allow",
+		delete: "allow",
+		update: "allow"
+	}
+}, {
+	type: "db.kind",
+	object: "cn.xuepx.qq.imloginstate:1",
+	caller: "com.palm.*",
+	operations: {
+		read: "allow",
+		create: "allow",
+		delete: "allow",
+		update: "allow"
+	}
+}, {
+	type: "db.kind",
+	object: "cn.xuepx.qq.immessage:1",
+	caller: "cn.xuepx.*",
+	operations: {
+		read: "allow",
+		create: "allow",
+		delete: "allow",
+		update: "allow"
+	}
+}, {
+	type: "db.kind",
+	object: "cn.xuepx.qq.immessage:1",
+	caller: "com.palm.*",
+	operations: {
+		read: "allow",
+		create: "allow",
+		delete: "allow",
+		update: "allow"
+	}
+}]

@@ -1,38 +1,4 @@
-// TODO: we need to disable/cancel our Activity at onEnable with enabled: false
-// TODO: probably also need to setup an activity that's name is based on the account name,
-//       so that we have one activity per account, and then it should be cake to
-//       know which account it wants us to work on.  Also, someone could have multiple
-//       accounts for a service, with only one of them enabled for messaging (if you have more than one capability)
-// TODO: I think I'd like to add a seperate file that actually handles the
-//       login/authenticate/retrieve messages/send messages stuff, and mostly just
-//       leave this file alone.
-
-// NOTE: There are a few service calls to the Palm ActivityManager service
-// in this source code, that are currently commented out.  I/We need to figure
-// out how to properly get the ActivityManager to work to make the most efficient
-// use of the database and built-in power saving functions of webOS.
-// At the moment, I have wired a simple 5-minute sync timer that should sync
-// incoming and outgoing messages at the same time.
-// Ideally, we want to have the service as idle as possible, so we want to just
-// wake it when a user actually inserts a message into the database.
-// Personally, I'm not sure exactly how IM services that need a persistent
-// connection are going to handle this, but hopefully we can come up with something
-// there.
-//
-// Also, there is a bug in this that does not show the account type inside the
-// messaging app's drop down status list.  I'm not certain, but I think that
-// may be due to the example account setup not having a CONTACTS connector.
-
-// Just a log to say we're present.  After installing the app/service, you can
-// run "run-js-service -k /media/cryptofs/apps/usr/palm/services/your.service.directory"
-// to see the actual output from the service.  That has been instrumental in helping me
-// to figure out what's going on in here.  As well as "ls-monitor" to watch the
-// service bus.
-console.log("Loading serviceEndPoints *****************************************************");
-
-// Here are a list of possible errors that you can return, using throw new Error("code") or future.setException(Error("code")) or some such
-// maybe future.setException(Foundations.Err.create(error.code));
-// Taken from the webOS 3.0 accounts app:
+//错误代码
 /*
  "UNKNOWN_ERROR":                                accountsRb.$L("Unknown error"),
  "401_UNAUTHORIZED":                             accountsRb.$L("The account credentials you entered are incorrect. Try again."),
@@ -61,22 +27,10 @@ console.log("Loading serviceEndPoints ******************************************
  "CALENDAR_DISABLED":                    accountsRb.$L("Your account does not have calendar enabled. Please log in to your account and
  */
 
-// Called to test your credentials given - this is specified in the account-template.json, under "validator"
-// args = { "username": username entered, "password": password entered,
-//          "templateId": our template, "config": { ? } }
-// return a "credentials" object and a "config" object.  The "config" object will get passed to
-// the onCreate function when your account is created.
-//
-// Use this to go to your online service, and verify that the login information
-// given by the user works.  Return any credentials you will need to login to the
-// system again (ie username, password, service key, whatever), so that they will
-// be passed to onCreate, where you can save them.
-// Also called when credentials stop working, such as an expired access code, or
-// password change, and the user enters new information.
-//
-// I am not sure at this time what exactly is called when credentials stop working, or how
-// it even determines that.  That part will require further research.
-
+//checkCredentials:登录验证
+//功能：
+//      1. QQ登录
+//      2. 保存用户QQ帐号、密码、sid
 var checkCredentials = Class.create({
     run:function (future) {
         var args = this.controller.args;
@@ -129,109 +83,99 @@ var checkCredentials = Class.create({
     }
 });
 
-// Called when your account is created from the Accounts settings, use this
-// function to create any account specific information.  In this example,
-// we're going to create a loginstate object, so the messaging app can see that
-// we do, in fact, exist.
-// specified in your account-template.json
-
-// In SynerGV, I use this to load an additional database with the user's webOS account _id field,
-// and their username, as well as configuration settings that are used on a per-account basis.
-// args contains the accountId field, which is the webOS account _id, as well as the objects
-// passed down from checkCredentials.
-
+//onCreate:帐号创建
 var onCreate = Class.create({
     run:function (future) {
-        var args = this.controller.args;
-        console.log("onCreate args=", JSON.stringify(args));
-
-        // Setup permissions on the database objects so that our app can read/write them.
-        // This is purely optional, and according to the docs here:
-        // https://developer.palm.com/content/api/dev-guide/synergy/creating-synergy-contacts-package.html
-
-        // You should be able to do this by specifying a file: service/configuration/db/kinds/cn.xuepx.qq.immessage
-        // and then placing the contents of this permissions variable as JSON inside that file.
-        // I am doing this from code, merely to present it since we can't comment system JSON.
-
-        var permissions = [
-            {
-                type:"db.kind",
-                object:IM_MESSAGE_KIND,
-                caller:KIND_PREFIX,
-                operations:{
-                    read:"allow",
-                    create:"allow",
-                    delete:"allow",
-                    update:"allow"
-                }
-            },
-            {
-                type:"db.kind",
-                object:IM_MESSAGE_KIND,
-                caller:"com.palm.*",
-                operations:{
-                    read:"allow",
-                    create:"allow",
-                    delete:"allow",
-                    update:"allow"
-                }
-            },
-            {
-                type:"db.kind",
-                object:IM_LOGINSTATE_KIND,
-                caller:KIND_PREFIX,
-                operations:{
-                    read:"allow",
-                    create:"allow",
-                    delete:"allow",
-                    update:"allow"
-                }
-            },
-            {
-                type:"db.kind",
-                object:IM_LOGINSTATE_KIND,
-                caller:"com.palm.*",
-                operations:{
-                    read:"allow",
-                    create:"allow",
-                    delete:"allow",
-                    update:"allow"
-                }
-            },
-            {
-                type:"db.kind",
-                object:IM_COMMAND_KIND,
-                caller:KIND_PREFIX,
-                operations:{
-                    read:"allow",
-                    create:"allow",
-                    delete:"allow",
-                    update:"allow"
-                }
-            },
-            {
-                type:"db.kind",
-                object:IM_COMMAND_KIND,
-                caller:"com.palm.*",
-                operations:{
-                    read:"allow",
-                    create:"allow",
-                    delete:"allow",
-                    update:"allow"
-                }
-            }
-        ];
-
-        PalmCall.call("palm://com.palm.db/", "putPermissions", { permissions:permissions }).then(function (fut) {
-            console.log("permissions put result=", JSON.stringify(fut.result));
-            future.result = { returnValue:true, permissionsresult:fut.result };
-        });
+//        var args = this.controller.args;
+//        console.log("onCreate args=", JSON.stringify(args));
+//
+//        // Setup permissions on the database objects so that our app can read/write them.
+//        // This is purely optional, and according to the docs here:
+//        // https://developer.palm.com/content/api/dev-guide/synergy/creating-synergy-contacts-package.html
+//
+//        // You should be able to do this by specifying a file: service/configuration/db/kinds/cn.xuepx.qq.immessage
+//        // and then placing the contents of this permissions variable as JSON inside that file.
+//        // I am doing this from code, merely to present it since we can't comment system JSON.
+//
+//        var permissions = [
+//            {
+//                type:"db.kind",
+//                object:IM_MESSAGE_KIND,
+//                caller:KIND_PREFIX,
+//                operations:{
+//                    read:"allow",
+//                    create:"allow",
+//                    delete:"allow",
+//                    update:"allow"
+//                }
+//            },
+//            {
+//                type:"db.kind",
+//                object:IM_MESSAGE_KIND,
+//                caller:"com.palm.*",
+//                operations:{
+//                    read:"allow",
+//                    create:"allow",
+//                    delete:"allow",
+//                    update:"allow"
+//                }
+//            },
+//            {
+//                type:"db.kind",
+//                object:IM_LOGINSTATE_KIND,
+//                caller:KIND_PREFIX,
+//                operations:{
+//                    read:"allow",
+//                    create:"allow",
+//                    delete:"allow",
+//                    update:"allow"
+//                }
+//            },
+//            {
+//                type:"db.kind",
+//                object:IM_LOGINSTATE_KIND,
+//                caller:"com.palm.*",
+//                operations:{
+//                    read:"allow",
+//                    create:"allow",
+//                    delete:"allow",
+//                    update:"allow"
+//                }
+//            },
+//            {
+//                type:"db.kind",
+//                object:IM_COMMAND_KIND,
+//                caller:KIND_PREFIX,
+//                operations:{
+//                    read:"allow",
+//                    create:"allow",
+//                    delete:"allow",
+//                    update:"allow"
+//                }
+//            },
+//            {
+//                type:"db.kind",
+//                object:IM_COMMAND_KIND,
+//                caller:"com.palm.*",
+//                operations:{
+//                    read:"allow",
+//                    create:"allow",
+//                    delete:"allow",
+//                    update:"allow"
+//                }
+//            }
+//        ];
+//
+//        PalmCall.call("palm://com.palm.db/", "putPermissions", { permissions:permissions }).then(function (fut) {
+//            console.log("permissions put result=", JSON.stringify(fut.result));
+//            future.result = { returnValue:true, permissionsresult:fut.result };
+//        });
     }
 });
 
-// Called when your account is deleted from the Accounts settings, probably used
-// to delete your account info and any stored data
-
+//onDelete：帐号删除
+//功能：
+//      1. 删除保存的QQ帐号、密码、sid、登录状态数据库
 var onDelete = Class.create({
     run:function (future) {
         var args = this.controller.args;
@@ -265,10 +209,6 @@ var onDelete = Class.create({
     }
 });
 
-// This is called when multiple capabilities are turned on or off. I've not yet implemented this,
-// as the only connectors I've implemented have had at most two capabilities, one or both of which
-// were not able to be disabled.
-
 var onCapabilitiesChanged = Class.create({
     run:function (future) {
         var args = this.controller.args;
@@ -276,10 +216,7 @@ var onCapabilitiesChanged = Class.create({
     }
 });
 
-// Called when user has entered new, validated credentials
-// Intended so that if you've been not syncing due to a credentials failure, then you'll know
-// that it should be good to go again
-
+//重新登录
 var onCredentialsChanged = Class.create({
     run:function (future) {
         var args = this.controller.args;
@@ -287,9 +224,6 @@ var onCredentialsChanged = Class.create({
     }
 });
 
-// Included as part of the template.  You may want to set up a database watch
-// on your imstate objects, so you know when someone hits the "Offline" or
-// "online" toggle in the Messaging app, so that you can login/logout.
 
 var loginStateChanged = Class.create({
     run:function (future) {
@@ -327,9 +261,10 @@ var loginStateChanged = Class.create({
     }
 })
 
-// Included as part of the template.  You might want to fill this in with
-// your outgoing message code, to make it easy to call when needed.
-var sendIM = Class.create({               //to DO======================================================================================
+//sendIM：发送消息
+//功能：
+//      1. 利用保存的sid从数据库中检索未发送的消息，将其发出，并更改状态
+var sendIM = Class.create({
     run:function (future) {
         var args = this.controller.args;
         // get cookie
@@ -416,10 +351,8 @@ var sendIM = Class.create({               //to DO===============================
     }
 });
 
-// When the Messaging program is told to Add a buddy, Block someone, or remove a Buddy, it will
-// add your custom imcommand kind to the database.  If you need those functions, you should
-// setup a watch on that database, and perform steps similar to this:
-
+//sendCommand：命令
+//功能：添加好友，删除好友、拉黑等（未测试）
 var sendCommand = Class.create({
     run:function (future) {
         var args = this.controller.args;
@@ -462,19 +395,9 @@ var sendCommand = Class.create({
     }
 });
 
-//
-// Synergy service got 'onEnabled' message. When enabled, a sync should be started and future syncs scheduled.
-// Otherwise, syncing should be disabled and associated data deleted.
-// Account-wide configuration should remain and only be deleted when onDelete is called.
-// onEnabled args should be like { accountId: "++Mhsdkfj", enabled: true }
-//
-// TODO: This function is a total mess, and should be re-written for the example.
-// In SynerGV, this function is where we turn on and off the various database watches.
-
-// Also, according to the webOS documentation, when disabling a capability (enabled: false), you
-// should erase any stored data for that specific capability, but not for the account as a whole,
-// as that data should remain in case they re-enable the capability.
-
+//onEnabled：
+//onEnabled(true)帐号创建后执行
+//onEnabled(false)帐号删除时执行
 var onEnabled = Class.create({
     run:function (future) {
         var args = this.controller.args;
@@ -525,140 +448,107 @@ var onEnabled = Class.create({
     }
 });
 
-
-// Here's some possibly not well known things about the services that I'm learning while attempting to read the
-// service code itself (which is in Javascript, but without knowing it's intentions, it's quite difficult to read
-// for my skill level)
+//var startActivity = Class.create({
+//    run:function (activityFuture) {
+//        var args = this.controller.args;
+//        localCall("palm://com.palm.activitymanager/", "create",
+//        {
+//          start:true,
+//          activity:{
+//            name:"QQOutgoingSync", // + args.accountId,
+//            description:"QQ Pending Messages Watch",
+//            type:{
+//              foreground:true,
+//              power:true,
+//              powerDebounce:true,
+//              explicit:true,
+//              persist:true
+//            },
+//            requirements:{
+//              internet:true
+//            },
+//            trigger:{
+//              method:"palm://com.palm.db/watch",
+//              key:"fired",
+//              params:{
+//                subscribe:true,
+//                query:{
+//                  from:IM_MESSAGE_KIND,
+//                  where:[
+//                    { prop:"status", op:"=", val:"pending" },
+//                    { prop:"folder", op:"=", val:"outbox" }
+//                  ],
+//                  limit:1
+//                }
+//              }
+//            },
+//            callback:{
+//              method:"palm://cn.xuepx.qq.service/sendIM",
+//              params:{}
+//            }
+//          }
+//        }, function (f) {
+//          console.log("startActivity result=", JSON.stringify(f));
+//          activityFuture.result = f;
+//        }
+//      );
+//    }
+//});
+//var adoptActivity = function (accountId) {
+//    //var args = this.controller.args;
+//    localCall("palm://com.palm.activitymanager/", "adopt", {
+//        activityName:"QQOutgoingSync", // + accountId,
+//        wait:true,
+//        subscribe:true
+//    }, function (f) {
+//        if (f.returnValue === true) {
+//            return true;
+//        } else {
+//            return false;
+//        }
+//    });
+//}
 //
-// The command assistants appear to be instances of Prototype js lib Classes.
-// You should be able to do something like
+//var completeActivity = Class.create({
+//    run:function (completeFuture) {
+//        var args = this.controller.args;
+//        PalmCall.call("palm://com.palm.activitymanager/", "complete", {
+//            activityName:"QQOutgoingSync", // + args.accountId,
+//            restart:true,
+//            // the docs say you shouldn't need to specify the trigger and callback conditions again, i think..
+//            // someone else said reset the callback to a different function .. to avoid the "Temporarily Not Available" problem
+//            // other people say you do. so let's try it.
+//            trigger:{
+//                key:"fired",
+//                method:"palm://com.palm.db/watch",
+//                params:{
+//                    query:{
+//                        from:"cn.xuepx.qq.immessage:1",
+//                        where:[
+//                            { "prop":"folder", "op":"=", "val":"outbox" },
+//                            { "prop":"status", "op":"=", "val":"pending" }
+//                        ]
+//                    },
+//                    subscribe:true
+//                }
+//            }
+//        }).then(function (f) {
+//                console.log("completeActivity result", JSON.stringify(f.result));
+//                completeFuture.result = f.result;
+//            });
+//    }
+//});
 //
-// runCommandAssistant = Class.create({ run: ..., complete: ... })
-//
-// This would make it a lot more enyo-like in structure.
-//
-// Available functions that the service appears to call inside a class:
-//
-// setup - called before running a command (we should try to adopt a thing here, perhaps)
-// commandTimeout - not a function, but apparently you can set the timeout for individual commands by setting a commandTimeout
-//                  variable.  This will override the command's configured timeout or the service as a whole's timeout
-// timeoutReceived - called when a command has reached it's timeout
-// complete - called when a command run is completed
-// cleanup - called after complete
-// yield - called when a "yield" Event happens, whatever that means
-// cancelSubscription - presumably called when a subscription is cancelled
-
-// The "sync" assistant is normally called from the CONTACTS "Sync Now" button.
-// This doesn't seem to be the case when a MESSAGING connector is added, but we're going
-// to use this to fire off a database watch.  If you're going to be retrieving data from the
-// internet (presumably!) you probably want to add a call to the Alarm function, so that you
-// can get a wake up alert here.
-// Keep in mind that Synergy can create multiple accounts of one type, so you probably want to dig up
-// all possible accountinfos, and sync them all.
-
-// TODO: Add support to the test app to inject accountId here
-
-var startActivity = Class.create({
-    run:function (activityFuture) {
-        var args = this.controller.args;
-        localCall("palm://com.palm.activitymanager/", "create",
-        {
-          start:true,
-          activity:{
-            name:"QQOutgoingSync", // + args.accountId,
-            description:"QQ Pending Messages Watch",
-            type:{
-              foreground:true,
-              power:true,
-              powerDebounce:true,
-              explicit:true,
-              persist:true
-            },
-            requirements:{
-              internet:true
-            },
-            trigger:{
-              method:"palm://com.palm.db/watch",
-              key:"fired",
-              params:{
-                subscribe:true,
-                query:{
-                  from:IM_MESSAGE_KIND,
-                  where:[
-                    { prop:"status", op:"=", val:"pending" },
-                    { prop:"folder", op:"=", val:"outbox" }
-                  ],
-                  limit:1
-                }
-              }
-            },
-            callback:{
-              method:"palm://cn.xuepx.qq.service/sendIM",
-              params:{}
-            }
-          }
-        }, function (f) {
-          console.log("startActivity result=", JSON.stringify(f));
-          activityFuture.result = f;
-        }
-      );
-    }
-});
-var adoptActivity = function (accountId) {
-    //var args = this.controller.args;
-    localCall("palm://com.palm.activitymanager/", "adopt", {
-        activityName:"QQOutgoingSync", // + accountId,
-        wait:true,
-        subscribe:true
-    }, function (f) {
-        if (f.returnValue === true) {
-            return true;
-        } else {
-            return false;
-        }
-    });
-}
-
-var completeActivity = Class.create({
-    run:function (completeFuture) {
-        var args = this.controller.args;
-        PalmCall.call("palm://com.palm.activitymanager/", "complete", {
-            activityName:"QQOutgoingSync", // + args.accountId,
-            restart:true,
-            // the docs say you shouldn't need to specify the trigger and callback conditions again, i think..
-            // someone else said reset the callback to a different function .. to avoid the "Temporarily Not Available" problem
-            // other people say you do. so let's try it.
-            trigger:{
-                key:"fired",
-                method:"palm://com.palm.db/watch",
-                params:{
-                    query:{
-                        from:"cn.xuepx.qq.immessage:1",
-                        where:[
-                            { "prop":"folder", "op":"=", "val":"outbox" },
-                            { "prop":"status", "op":"=", "val":"pending" }
-                        ]
-                    },
-                    subscribe:true
-                }
-            }
-        }).then(function (f) {
-                console.log("completeActivity result", JSON.stringify(f.result));
-                completeFuture.result = f.result;
-            });
-    }
-});
-
-var cancelActivity = Class.create({
-    run:function (cancelFuture) {
-        var args = this.controller.args;
-        PalmCall.call("palm://com.palm.activitymanager/", "cancel", {
-            activityName:"SynergyOutgoingSync"// + args.accountId
-        }).then(function (f) {
-                cancelFuture.result = f.result;
-            });
-    }
-})
+//var cancelActivity = Class.create({
+//    run:function (cancelFuture) {
+//        var args = this.controller.args;
+//        PalmCall.call("palm://com.palm.activitymanager/", "cancel", {
+//            activityName:"SynergyOutgoingSync"// + args.accountId
+//        }).then(function (f) {
+//                cancelFuture.result = f.result;
+//            });
+//    }
+//})
 
 setWakeup = function (a) {
     log(" setWakeup");

@@ -1,0 +1,11 @@
+{
+  "accounts": ["cn.xuepx.qq.account"],
+  "app": "cn.xuepx.qq",
+  "id": "cn.xuepx.qq",
+  "loc_name": "QQ",
+  "package_format_version": 2,
+  "services": ["cn.xuepx.qq.service"],
+  "vendor": "xuepx",
+  "vendorurl": "http://www.xuepx.cn/",
+  "version": "1.0.0"
+}

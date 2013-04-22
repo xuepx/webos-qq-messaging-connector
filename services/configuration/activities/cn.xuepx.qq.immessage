@@ -1,0 +1,35 @@
+{
+	"start": true,
+	"activity": {
+		"name": "QQOutgoingSync",
+		"description": "QQ Pending Messages Watch",
+		"type": {
+          	"foreground": true,
+          	"power":true,
+          	"powerDebounce":true,
+          	"explicit":true,
+          	"persist" : true
+        },
+        "requirements": {
+		    "internet": true
+		},
+        "trigger": {
+			"method": "palm://com.palm.db/watch",
+			"key": "fired",
+			"params": {
+				"subscribe": true,
+				"query": {
+					"from": "cn.xuepx.qq.immessage:1",
+					"where": [
+						{"op":"=","prop":"status","val":"pending"},
+						{"op":"=","prop":"folder","val":"outbox"}
+						]
+				}
+			}
+		},
+		"callback": {
+			"method": "palm://cn.xuepx.qq.service/sendIM",
+			"params": {}
+		}
+	}
+}

@@ -86,90 +86,6 @@ var checkCredentials = Class.create({
 //onCreate:帐号创建
 var onCreate = Class.create({
     run:function (future) {
-//        var args = this.controller.args;
-//        console.log("onCreate args=", JSON.stringify(args));
-//
-//        // Setup permissions on the database objects so that our app can read/write them.
-//        // This is purely optional, and according to the docs here:
-//        // https://developer.palm.com/content/api/dev-guide/synergy/creating-synergy-contacts-package.html
-//
-//        // You should be able to do this by specifying a file: service/configuration/db/kinds/cn.xuepx.qq.immessage
-//        // and then placing the contents of this permissions variable as JSON inside that file.
-//        // I am doing this from code, merely to present it since we can't comment system JSON.
-//
-//        var permissions = [
-//            {
-//                type:"db.kind",
-//                object:IM_MESSAGE_KIND,
-//                caller:KIND_PREFIX,
-//                operations:{
-//                    read:"allow",
-//                    create:"allow",
-//                    delete:"allow",
-//                    update:"allow"
-//                }
-//            },
-//            {
-//                type:"db.kind",
-//                object:IM_MESSAGE_KIND,
-//                caller:"com.palm.*",
-//                operations:{
-//                    read:"allow",
-//                    create:"allow",
-//                    delete:"allow",
-//                    update:"allow"
-//                }
-//            },
-//            {
-//                type:"db.kind",
-//                object:IM_LOGINSTATE_KIND,
-//                caller:KIND_PREFIX,
-//                operations:{
-//                    read:"allow",
-//                    create:"allow",
-//                    delete:"allow",
-//                    update:"allow"
-//                }
-//            },
-//            {
-//                type:"db.kind",
-//                object:IM_LOGINSTATE_KIND,
-//                caller:"com.palm.*",
-//                operations:{
-//                    read:"allow",
-//                    create:"allow",
-//                    delete:"allow",
-//                    update:"allow"
-//                }
-//            },
-//            {
-//                type:"db.kind",
-//                object:IM_COMMAND_KIND,
-//                caller:KIND_PREFIX,
-//                operations:{
-//                    read:"allow",
-//                    create:"allow",
-//                    delete:"allow",
-//                    update:"allow"
-//                }
-//            },
-//            {
-//                type:"db.kind",
-//                object:IM_COMMAND_KIND,
-//                caller:"com.palm.*",
-//                operations:{
-//                    read:"allow",
-//                    create:"allow",
-//                    delete:"allow",
-//                    update:"allow"
-//                }
-//            }
-//        ];
-//
-//        PalmCall.call("palm://com.palm.db/", "putPermissions", { permissions:permissions }).then(function (fut) {
-//            console.log("permissions put result=", JSON.stringify(fut.result));
-//            future.result = { returnValue:true, permissionsresult:fut.result };
-//        });
     }
 });
 
@@ -225,41 +141,98 @@ var onCredentialsChanged = Class.create({
 });
 
 
-var loginStateChanged = Class.create({
-    run:function (future) {
-//        var args = this.controller.args;
-//        if (args.$activity && args.$activity.activityId) {
-//            PalmCall.call("palm://com.palm.activitymanager/", "complete", {
-//                activityId:args.$activity.activityId
-//            });
-//        }
-//        var f1 = DB.find({"from":IM_LOGINSTATE_KIND});
-//        f1.then(function (future) {
-//            if (f1.result.results && f1.result.results.length <= 0) {
-//                future.result = { returnValue:false };
-//                return;
-//            }
-//            console.log(JSON.stringify(future.result));
-//            // TODO: Here we're only get the first result ...
-//            loginState = f1.result.results[0];
-//            if (loginState.state === "online") {
-//                loginState.state="offline";
-//                DB.merge([loginState]).then(function (f2) {
-//                    future.result = { returnValue:true };
-//                });
-//            }else{
-//                loginState.state="online";
-//                DB.merge([loginState]).then(function (f2) {
-//                    localCall("palm://cn.xuepx.qq.service","startActivity",'{}',function(){
-//                        future.result = { returnValue:true };
-//                    });
-//                });
-//            }
-//        });
-        future.result = {r:JSON.stringify(args)};
-        console.log("loginStateChanged", JSON.stringify(args));
+var loginStateChangedAssistant = function(future) {};
+
+loginStateChangedAssistant.prototype.complete = function(activity) {
+    return true;
+};
+
+loginStateChangedAssistant.prototype.run = function(response) {
+    var args = this.controller.args;
+
+
+    if (args.$activity && args.$activity.activityId) {
+        PalmCall.call("palm://com.palm.activitymanager/",  "complete", {
+            activityId : args.$activity.activityId
+        });
     }
-})
+
+    var loginState = {};
+
+    var future = DB.find({"from" : IM_LOGINSTATE_KIND});
+    future.then(function (future) {
+        if (future.result.results && future.result.results.length <= 0) {
+            future.result = { returnValue : false };
+            return;
+        }
+        console.log(JSON.stringify(future.result));
+        // TODO: Here we're only get the first result ...
+        loginState = future.result.results[0];
+        log("loginStateChangedAssistant args: " + JSON.stringify(loginState));
+        //在线时10秒接受一次消息
+        //隐身时2分钟接受一次消息
+        //离线停止计时器（不做退出）
+        switch(loginState.availability){
+            case 0: //在线
+                localCall("palm://cn.xuepx.qq.service", "sync",{"interval":UPDATE_INTERVAL_ONLINE});
+                break;
+            case 1://未知
+                break;
+            case 2://正忙
+                break;
+            case 3://隐身
+                localCall("palm://cn.xuepx.qq.service", "sync",{"interval":UPDATE_INTERVAL});
+                break;
+            case 4://离线
+                exec('luna-send -n 1 palm://com.palm.power/timeout/clear \'{"key":"cn.xuepx.qq.timer"}\'',function(){});
+                break;
+        }
+        future.nest(createLoginStateActivity(loginState));
+    });
+
+    response.nest(future);
+    return;
+};
+
+function createLoginStateActivity(loginState) {
+    var f = DB.find(queryFromAccountId (IM_LOGINSTATE_KIND, loginState.accountId));
+    f.then(function(f) {
+        var rev = f.result.results[0]._rev;
+        f.nest(PalmCall.call("palm://com.palm.activitymanager/",  "create", {
+            "start": true,
+            "replace" : true,
+            "activity": {
+                "name": "QQLoginStateSync",
+                "description": "QQ Login State Watch",
+                "type": {
+                    "explicit":true,
+                    "power":true,
+                    "foreground": true,
+                    "persist" : true
+                },
+		        "requirements": {
+		        	"internet":true
+		        },
+                "trigger": {
+                    "method": "palm://com.palm.db/watch",
+                    "key": "fired",
+                    "params": {
+                        "subscribe": true,
+                        "query": {
+                            "from": "cn.xuepx.qq.imloginstate:1",
+                            "where": [{"prop":"_rev","op": ">","val":rev}]
+                        }
+                    }
+                },
+                "callback": {
+                    "method": "palm://cn.xuepx.qq.service/loginStateChanged",
+                    "params": {}
+                }
+            }
+        }));
+    });
+    return f;
+}
 
 //sendIM：发送消息
 //功能：
@@ -295,33 +268,7 @@ var sendIM = Class.create({
                             });
                         }
                     }
-//                    future.result = { returnValue:true,to:msgList[0].to,msg:msgList[0].msg,cookies:cookies};
                     try {
-                      if(msgList[0].msg=="@start"){
-                        localCall("palm://cn.xuepx.qq.service", "sync",{"interval":UPDATE_INTERVAL_ONLINE});
-                        f2.result.results[0].status = "successful";
-                        DB.merge([ f2.result.results[0] ]);
-                        if (msgList.length > 1) {
-                          localCall("palm://cn.xuepx.qq.service", "sendIM", {});
-                        }
-                        msgList.slice(0);
-                        future.result = { returnValue:true};
-                        return;
-                      }else{
-                        if(msgList[0].msg=="@stop"){
-                          localCall("palm://cn.xuepx.qq.service", "sync",{"interval":UPDATE_INTERVAL});
-                          f2.result.results[0].status = "successful";
-                          DB.merge([ f2.result.results[0] ]);
-                          if (msgList.length > 1) {
-                            localCall("palm://cn.xuepx.qq.service", "sendIM", {});
-                          }
-                          exec('luna-send -n 1 palm://com.palm.power/timeout/clear \'{"key":"cn.xuepx.qq.timer"}\'',function(){
-                            future.result = { returnValue:true};
-                            return;
-                          });
-                          return;
-                        }
-                      }
                       qqSend(sid,msgList[0].to, msgList[0].msg, function (f3) {
                         if (f3.returnValue === true) {
                           f2.result.results[0].status = "successful";
@@ -424,7 +371,7 @@ var onEnabled = Class.create({
                                             accountId:args.accountId,
                                             username:Base64.decode(JSON.parse(f1.responseText).keydata),
                                             state:"online",
-                                            availability:1
+                                            availability:0
                                         }
                                     ]
                                 };
@@ -447,108 +394,6 @@ var onEnabled = Class.create({
         }
     }
 });
-
-//var startActivity = Class.create({
-//    run:function (activityFuture) {
-//        var args = this.controller.args;
-//        localCall("palm://com.palm.activitymanager/", "create",
-//        {
-//          start:true,
-//          activity:{
-//            name:"QQOutgoingSync", // + args.accountId,
-//            description:"QQ Pending Messages Watch",
-//            type:{
-//              foreground:true,
-//              power:true,
-//              powerDebounce:true,
-//              explicit:true,
-//              persist:true
-//            },
-//            requirements:{
-//              internet:true
-//            },
-//            trigger:{
-//              method:"palm://com.palm.db/watch",
-//              key:"fired",
-//              params:{
-//                subscribe:true,
-//                query:{
-//                  from:IM_MESSAGE_KIND,
-//                  where:[
-//                    { prop:"status", op:"=", val:"pending" },
-//                    { prop:"folder", op:"=", val:"outbox" }
-//                  ],
-//                  limit:1
-//                }
-//              }
-//            },
-//            callback:{
-//              method:"palm://cn.xuepx.qq.service/sendIM",
-//              params:{}
-//            }
-//          }
-//        }, function (f) {
-//          console.log("startActivity result=", JSON.stringify(f));
-//          activityFuture.result = f;
-//        }
-//      );
-//    }
-//});
-//var adoptActivity = function (accountId) {
-//    //var args = this.controller.args;
-//    localCall("palm://com.palm.activitymanager/", "adopt", {
-//        activityName:"QQOutgoingSync", // + accountId,
-//        wait:true,
-//        subscribe:true
-//    }, function (f) {
-//        if (f.returnValue === true) {
-//            return true;
-//        } else {
-//            return false;
-//        }
-//    });
-//}
-//
-//var completeActivity = Class.create({
-//    run:function (completeFuture) {
-//        var args = this.controller.args;
-//        PalmCall.call("palm://com.palm.activitymanager/", "complete", {
-//            activityName:"QQOutgoingSync", // + args.accountId,
-//            restart:true,
-//            // the docs say you shouldn't need to specify the trigger and callback conditions again, i think..
-//            // someone else said reset the callback to a different function .. to avoid the "Temporarily Not Available" problem
-//            // other people say you do. so let's try it.
-//            trigger:{
-//                key:"fired",
-//                method:"palm://com.palm.db/watch",
-//                params:{
-//                    query:{
-//                        from:"cn.xuepx.qq.immessage:1",
-//                        where:[
-//                            { "prop":"folder", "op":"=", "val":"outbox" },
-//                            { "prop":"status", "op":"=", "val":"pending" }
-//                        ]
-//                    },
-//                    subscribe:true
-//                }
-//            }
-//        }).then(function (f) {
-//                console.log("completeActivity result", JSON.stringify(f.result));
-//                completeFuture.result = f.result;
-//            });
-//    }
-//});
-//
-//var cancelActivity = Class.create({
-//    run:function (cancelFuture) {
-//        var args = this.controller.args;
-//        PalmCall.call("palm://com.palm.activitymanager/", "cancel", {
-//            activityName:"SynergyOutgoingSync"// + args.accountId
-//        }).then(function (f) {
-//                cancelFuture.result = f.result;
-//            });
-//    }
-//})
 
 setWakeup = function (a) {
     log(" setWakeup");

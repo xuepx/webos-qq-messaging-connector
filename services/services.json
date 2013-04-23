@@ -2,7 +2,7 @@
     "id":"cn.xuepx.qq.service",
     "description":"QQ Synergy Service",
     "engine":"node",
-    "activityTimeout":30,
+    "activityTimeout":10,
     "services":[
         {
             "name":"cn.xuepx.qq.service",
@@ -47,7 +47,7 @@
                 },
                 {
                     "name":"loginStateChanged",
-                    "assistant":"loginStateChanged",
+                    "assistant":"loginStateChangedAssistant",
                     "public":true
                 },
                 {
@@ -58,21 +58,6 @@
                 {
                     "name":"sendCommand",
                     "assistant":"sendCommand",
-                    "public":true
-                },
-                {
-                    "name":"startActivity",
-                    "assistant":"startActivity",
-                    "public":true
-                },
-                {
-                    "name":"completeActivity",
-                    "assistant":"completeActivity",
-                    "public":true
-                },
-                {
-                    "name":"cancelActivity",
-                    "assistant":"cancelActivity",
                     "public":true
                 }
             ]

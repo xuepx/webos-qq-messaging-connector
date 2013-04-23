@@ -1,11 +1,25 @@
 {
     "id": "cn.xuepx.qq.imloginstate:1",
-    "extends": ["com.palm.imloginstate:1"],
+    "extends": [
+        "com.palm.imloginstate:1"
+    ],
     "owner": "cn.xuepx.qq.service",
     "indexes": [
         {
             "name": "accountId",
-            "props": [{ "name": "accountId"}]
+            "props": [
+                {
+                    "name": "accountId"
+                }
+            ]
+        },
+        {
+            "name": "byrevision",
+            "props": [
+                {
+                    "name": "_rev"
+                }
+            ]
         }
     ]
 }

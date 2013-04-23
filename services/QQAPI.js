@@ -185,6 +185,7 @@ var loginbysid = function(sid,callback){
   });
 }
 
+
 var qqGetMsg = function(sid,callback){
   AjaxGet(msgHost,msgPath,{
     sid:sid,

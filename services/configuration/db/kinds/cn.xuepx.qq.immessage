@@ -1,5 +1,7 @@
 {
-    "extends": [ "com.palm.immessage:1" ],
+    "extends": [
+        "com.palm.immessage:1"
+    ],
     "id": "cn.xuepx.qq.immessage:1",
     "owner": "cn.xuepx.qq.service",
     "sync": true,
@@ -30,10 +32,15 @@
             ]
         },
         {
-             "name": "gConversationIdAndMessageText",
-             "props": [
-                 { "name": "gConversationId" }, { "name": "messageText" }
-             ]
+            "name": "gConversationIdAndMessageText",
+            "props": [
+                {
+                    "name": "gConversationId"
+                },
+                {
+                    "name": "messageText"
+                }
+            ]
         }
     ]
 }

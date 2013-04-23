@@ -1,0 +1,32 @@
+{
+	"start": true,
+	"activity": {
+		"name": "QQLoginStateSync",
+		"description": "QQ Login State Watch",
+		"type": {
+          	"foreground": true,
+          	"power":true,
+          	"powerDebounce":true,
+          	"explicit":true,
+          	"persist" : true
+        },
+        "requirements": {
+		    "internet": true
+		},
+        "trigger": {
+			"method": "palm://com.palm.db/watch",
+			"key": "fired",
+			"params": {
+				"subscribe": true,
+				"query": {
+					"from": "cn.xuepx.qq.imloginstate:1",
+					"where": [{"prop":"_rev","op": ">","val":-1}]
+				}
+			}
+		},
+		"callback": {
+			"method": "palm://cn.xuepx.qq.service/loginStateChanged",
+			"params": {}
+		}
+	}
+}

@@ -7,5 +7,6 @@
   "services": ["cn.xuepx.qq.service"],
   "vendor": "xuepx",
   "vendorurl": "http://www.xuepx.cn/",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "visible": false
 }

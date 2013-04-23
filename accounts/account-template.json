@@ -44,7 +44,8 @@
             "dbkinds":{
                 "immessage":"cn.xuepx.qq.immessage:1",
                 "imloginstate":"cn.xuepx.qq.imloginstate:1",
-                "imcommand":"cn.xuepx.qq.imcommand:1"
+                "imcommand":"cn.xuepx.qq.imcommand:1",
+                "imcontact":"cn.xuepx.qq.imcontact:1"
             }
         }
     ]

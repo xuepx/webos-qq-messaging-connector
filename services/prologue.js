@@ -171,7 +171,6 @@ var IM_LOGINSTATE_KIND = "cn.xuepx.qq.imloginstate:1";
 var IM_MESSAGE_KIND = "cn.xuepx.qq.immessage:1";
 var IM_COMMAND_KIND = "cn.xuepx.qq.imcommand:1";
 var KIND_PREFIX = "cn.xuepx.*";
-var IM_COMMAND_KIND = "cn.xuepx.qq.imcommand:1";
 var IM_QQ_TYPE = "type_qq";
 var UPDATE_INTERVAL = 300000;
 var UPDATE_INTERVAL_ONLINE = 10000;

@@ -264,7 +264,7 @@ var sendIM = Class.create({
                         for (var k = 0; k < f2.result.results[i].to.length; k++) {
                             msgList.push({
                                 "to":f2.result.results[i].to[k].addr.trim(),
-                                "msg":f2.result.results[i].messageText.replace('/media/internal/appdata/.qqemotion',"http://183.203.17.55/images/emo2009")
+                                "msg":f2.result.results[i].messageText
                             });
                         }
                     }

@@ -264,7 +264,7 @@ var sendIM = Class.create({
                         for (var k = 0; k < f2.result.results[i].to.length; k++) {
                             msgList.push({
                                 "to":f2.result.results[i].to[k].addr.trim(),
-                                "msg":f2.result.results[i].messageText
+                                "msg":f2.result.results[i].messageText.replace('/media/internal/appdata/.qqemotion',"http://183.203.17.55/images/emo2009")
                             });
                         }
                     }
@@ -434,12 +434,14 @@ var sync = Class.create({
                     var msgDb8 = [];
                     for (var k = 0; k < inResponse.unread.msg.length; k++) {
                         idMsgs.push(inResponse.unread.whoqq);
+                        var messageText= inResponse.unread.msg[k].content.replace("http://183.203.17.55/images/emo2009",'/media/internal/appdata/.qqemotion');
+                        log(messageText);
                         msgDb8.push({
                             "folder":"inbox",
                             "localTimestamp":new Date().getTime(),
                             "timestamp":new Date().getTime(),
                             "flags":{"read":false, "visible":true, "deliveryReport":false},
-                            "messageText":inResponse.unread.msg[k].content,
+                            "messageText":messageText,
                             "_kind":IM_MESSAGE_KIND,
                             "serviceName":IM_QQ_TYPE,
                             "status":"successful",
